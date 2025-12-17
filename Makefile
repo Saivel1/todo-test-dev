@@ -31,6 +31,9 @@ logs-celery: ## Логи Celery worker
 logs-beat: ## Логи Celery beat
 	docker-compose logs -f celery_beat
 
+logs-bot: ## Логи бота
+	docker-compose logs -f bot
+
 shell: ## Django shell
 	docker-compose exec backend python manage.py shell
 
@@ -60,6 +63,15 @@ db-reset: ## Сбросить базу данных
 	docker-compose up -d db
 	sleep 5
 	$(MAKE) migrate
+
+init-db: ## Инициализация БД с тестовыми данными
+	docker-compose exec backend python manage.py shell < scripts/init-db.sh
+
+backup-db: ## Backup базы данных
+	docker-compose exec db pg_dump -U todo_user todo_db > backup_$(shell date +%Y%m%d_%H%M%S).sql
+
+restore-db: ## Restore базы данных (make restore-db FILE=backup.sql)
+	cat $(FILE) | docker-compose exec -T db psql -U todo_user todo_db
 
 clean: ## Очистить всё (контейнеры, volumes, образы)
 	docker-compose down -v --rmi all

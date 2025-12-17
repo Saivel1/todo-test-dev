@@ -130,22 +130,23 @@ services:
     networks:
       - todo_network
 
-  # Telegram Bot (пока заглушка, создадим позже)
-  # bot:
-  #   build:
-  #     context: ./bot
-  #     dockerfile: Dockerfile
-  #   container_name: todo_bot
-  #   command: python main.py
-  #   volumes:
-  #     - ./bot:/app
-  #   environment:
-  #     TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
-  #     API_BASE_URL: http://backend:8000/api
-  #   depends_on:
-  #     - backend
-  #   networks:
-  #     - todo_network
+  # Telegram Bot
+    bot:
+      build:
+        context: ./bot
+        dockerfile: Dockerfile
+      container_name: todo_bot
+      command: python main.py
+      volumes:
+        - ./bot:/app
+      environment:
+        TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+        API_BASE_URL: http://backend:8000/api
+      depends_on:
+        - backend
+      restart: unless-stopped
+      networks:
+        - todo_network
 
 volumes:
   postgres_data:
