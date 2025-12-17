@@ -78,14 +78,14 @@ nano .env
 ### 3. Запуск через Docker Compose
 ```bash
 # Сборка и запуск всех сервисов
-docker-compose build
-docker-compose up -d
+docker compose build
+docker compose up -d
 
 # Применение миграций
-docker-compose exec backend python manage.py migrate
+docker compose exec backend python manage.py migrate
 
 # Создание суперпользователя (опционально)
-docker-compose exec backend python manage.py createsuperuser
+docker compose exec backend python manage.py createsuperuser
 
 # Или использовать Makefile
 make init  # Полная инициализация проекта
@@ -94,10 +94,10 @@ make init  # Полная инициализация проекта
 ### 4. Проверка работоспособности
 ```bash
 # Проверить статус контейнеров
-docker-compose ps
+docker compose ps
 
 # Просмотр логов
-docker-compose logs -f
+docker compose logs -f
 
 # Или через Makefile
 make ps
@@ -201,10 +201,10 @@ make logs
 ### Запуск тестов
 ```bash
 # Все тесты
-docker-compose exec backend pytest
+docker compose exec backend pytest
 
 # С покрытием кода
-docker-compose exec backend pytest --cov=apps --cov-report=html
+docker compose exec backend pytest --cov=apps --cov-report=html
 
 # Или через Makefile
 make test
@@ -275,7 +275,7 @@ todo-bot/
 │   ├── main.py
 │   ├── Dockerfile
 │   └── requirements.txt
-├── docker-compose.yml
+├── docker compose.yml
 ├── Makefile
 ├── .env.example
 ├── .gitignore
@@ -386,37 +386,37 @@ MIT License
 
 ### Контейнеры не запускаются
 ```bash
-docker-compose down -v
-docker-compose build --no-cache
-docker-compose up -d
+docker compose down -v
+docker compose build --no-cache
+docker compose up -d
 ```
 
 ### База данных не создаётся
 ```bash
-docker-compose down -v
+docker compose down -v
 docker volume prune
-docker-compose up -d
+docker compose up -d
 ```
 
 ### Бот не отвечает
 1. Проверить токен в `.env`
-2. Проверить логи: `docker-compose logs bot`
+2. Проверить логи: `docker compose logs bot`
 3. Проверить что backend доступен: `curl http://localhost:8000/api/categories/`
 
 ### Celery не работает
 ```bash
 # Проверить Redis
-docker-compose exec redis redis-cli ping
+docker compose exec redis redis-cli ping
 
 # Проверить логи
-docker-compose logs celery_worker
-docker-compose logs celery_beat
+docker compose logs celery_worker
+docker compose logs celery_beat
 ```
 
 ### Тесты падают
 ```bash
 # Дать права на создание тестовой БД
-docker-compose exec db psql -U todo_user -d postgres -c "ALTER USER todo_user CREATEDB;"
+docker compose exec db psql -U todo_user -d postgres -c "ALTER USER todo_user CREATEDB;"
 
 # Запустить тесты снова
 make test

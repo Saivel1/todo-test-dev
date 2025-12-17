@@ -31,5 +31,5 @@ USER appuser
 # Expose порт
 EXPOSE 8000
 
-# Команда по умолчанию (будет переопределена в docker-compose)
+# Команда по умолчанию (будет переопределена в docker compose)
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

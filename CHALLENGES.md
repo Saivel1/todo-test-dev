@@ -260,9 +260,9 @@ API_BASE_URL = 'http://localhost:8000/api'
 
 ### Решение
 
-**Использовать имя сервиса из docker-compose:**
+**Использовать имя сервиса из docker compose:**
 ```yaml
-# docker-compose.yml
+# docker compose.yml
 services:
   backend:
     container_name: todo_backend
@@ -396,7 +396,7 @@ RUN useradd -m -u 1000 appuser && \
 USER appuser
 ```
 
-**Или использовать user в docker-compose:**
+**Или использовать user в docker compose:**
 ```yaml
 services:
   backend:

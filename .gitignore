@@ -149,7 +149,7 @@ cython_debug/
 
 # Docker
 *.log
-docker-compose.override.yml
+docker compose.override.yml
 
 # Database
 *.sqlite3
