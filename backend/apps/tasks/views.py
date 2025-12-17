@@ -48,12 +48,6 @@ class TaskViewSet(viewsets.ModelViewSet):
             user=self.request.user
         ).select_related('user').prefetch_related('categories')
 
-        print("Вошли в get_queryset")
-        print(res)
-
-        logger.debug("Вошли в get_queryset")
-        logger.debug(res)
-
         return res
     
     def get_serializer_class(self):
@@ -96,14 +90,17 @@ class TaskViewSet(viewsets.ModelViewSet):
         queryset = self.filter_queryset(self.get_queryset())
 
         # Фильтрация по статусу
-        status_filter: str = request.query_params.get('status')
-        if status_filter.startswith("-"):
-            print(f"Запрос начинается с исключающего знака {status_filter}")
-            st_str = status_filter[1:]
-            queryset = queryset.exclude(status=st_str)
-
-        elif status_filter:
-            queryset = queryset.filter(status=status_filter)
+        status_filter = request.query_params.get('status')
+        if status_filter:
+            if status_filter.startswith('-'):
+                # Исключающий фильтр: ?status=-completed
+                status_to_exclude = status_filter[1:]
+                logger.info(f"Excluding status: {status_to_exclude}")
+                queryset = queryset.exclude(status=status_to_exclude)
+            else:
+                # Обычный фильтр: ?status=pending
+                logger.info(f"Filtering by status: {status_filter}")
+                queryset = queryset.filter(status=status_filter)
         
         # Фильтрация по категории
         category_id = request.query_params.get('category')
