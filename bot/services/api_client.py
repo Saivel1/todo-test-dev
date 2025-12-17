@@ -88,7 +88,7 @@ class APIClient:
         if category_id:
             params['category'] = category_id
         
-        response = await self._request('GET', '/tasks/', token=token, params=params)
+        response = await self._request('GET', '/tasks/my/', token=token, params=params)
         
         # Handle pagination
         if 'results' in response:
