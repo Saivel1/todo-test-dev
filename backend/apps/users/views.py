@@ -38,7 +38,8 @@ class TelegramAuthView(APIView):
     
     def post(self, request):
         serializer = TelegramAuthSerializer(data=request.data)
-        
+        print(request.data)
+
         if not serializer.is_valid():
             return Response(
                 serializer.errors,
