@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   # PostgreSQL Database
   db:
@@ -9,8 +11,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-todo_password}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+    # НЕТ ports - доступ только изнутри Docker
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-todo_user}"]
       interval: 10s
@@ -26,8 +27,7 @@ services:
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
+    # НЕТ ports - доступ только изнутри Docker
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -52,7 +52,7 @@ services:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
     ports:
-      - "${BACKEND_PORT:-8000}:8000"
+      - "${BACKEND_PORT:-8000}:8000"  # ✅ Открыт наружу для API
     environment:
       DEBUG: ${DEBUG:-True}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-dev-secret-key-change-in-production}
@@ -60,9 +60,9 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-todo_db}
       POSTGRES_USER: ${POSTGRES_USER:-todo_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-todo_password}
-      POSTGRES_HOST: db
+      POSTGRES_HOST: db  # ✅ Имя сервиса, не localhost
       POSTGRES_PORT: 5432
-      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0  # ✅ Имя сервиса
       CELERY_RESULT_BACKEND: redis://redis:6379/0
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:8000}
@@ -71,6 +71,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    restart: unless-stopped
     networks:
       - todo_network
 
@@ -99,10 +100,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    restart: unless-stopped
     networks:
       - todo_network
 
-  # Celery Beat (Periodic Tasks)
+  # Celery Beat
   celery_beat:
     build:
       context: ./backend
@@ -127,6 +129,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    restart: unless-stopped
     networks:
       - todo_network
 
@@ -141,7 +144,7 @@ services:
       - ./bot:/app
     environment:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
-      API_BASE_URL: http://backend:8000/api
+      API_BASE_URL: http://backend:8000/api  # ✅ Имя сервиса
     depends_on:
       - backend
     restart: unless-stopped
