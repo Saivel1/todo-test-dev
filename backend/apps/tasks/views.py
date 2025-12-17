@@ -98,6 +98,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         # Фильтрация по статусу
         status_filter: str = request.query_params.get('status')
         if status_filter.startswith("-"):
+            print(f"Запрос начинается с исключающего знака {status_filter}")
             queryset = queryset.exclude(status=status_filter)
 
         elif status_filter:
