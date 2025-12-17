@@ -48,6 +48,9 @@ class TaskViewSet(viewsets.ModelViewSet):
             user=self.request.user
         ).select_related('user').prefetch_related('categories')
 
+        print("Вошли в get_queryset")
+        print(res)
+
         logger.debug("Вошли в get_queryset")
         logger.debug(res)
 
@@ -92,6 +95,8 @@ class TaskViewSet(viewsets.ModelViewSet):
         """
         queryset = self.filter_queryset(self.get_queryset())
         logger.debug("Вошли в /api/tasks/my/")
+        print("Вошли в /api/tasks/my/")
+
         # Фильтрация по статусу
         status_filter = request.query_params.get('status')
         if status_filter:
