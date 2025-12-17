@@ -94,12 +94,13 @@ class TaskViewSet(viewsets.ModelViewSet):
         Альтернативный эндпоинт для получения задач пользователя
         """
         queryset = self.filter_queryset(self.get_queryset())
-        logger.debug("Вошли в /api/tasks/my/")
-        print("Вошли в /api/tasks/my/")
 
         # Фильтрация по статусу
-        status_filter = request.query_params.get('status')
-        if status_filter:
+        status_filter: str = request.query_params.get('status')
+        if status_filter.startswith("-"):
+            queryset = queryset.exclude(status=status_filter)
+
+        elif status_filter:
             queryset = queryset.filter(status=status_filter)
         
         # Фильтрация по категории
