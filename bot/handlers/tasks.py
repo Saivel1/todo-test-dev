@@ -48,39 +48,119 @@ def format_task(task: dict) -> str:
     return text
 
 
+def get_task_keyboard(task: dict) -> InlineKeyboardBuilder:
+    """
+    Создать клавиатуру для задачи в зависимости от её статуса
+    """
+    kb = InlineKeyboardBuilder()
+    status = task['status']
+    task_id = task['id']
+    
+    # Кнопки в зависимости от статуса
+    if status in ['pending', 'in_progress']:
+        # Активная задача - можно завершить или отменить
+        kb.button(text="✅ Выполнить", callback_data=f"complete:{task_id}")
+        kb.button(text="❌ Отменить", callback_data=f"cancel:{task_id}")
+        kb.button(text="✏️ Детали", callback_data=f"details:{task_id}")
+        kb.button(text="🗑 Удалить", callback_data=f"delete:{task_id}")
+        kb.adjust(2, 2)
+    
+    elif status == 'completed':
+        # Завершённая задача - только детали и удаление
+        kb.button(text="✏️ Детали", callback_data=f"details:{task_id}")
+        kb.button(text="🗑 Удалить", callback_data=f"delete:{task_id}")
+        kb.adjust(2)
+    
+    elif status == 'cancelled':
+        # Отменённая задача - можно вернуть в работу
+        kb.button(text="🔄 Вернуть в работу", callback_data=f"reopen:{task_id}")
+        kb.button(text="✏️ Детали", callback_data=f"details:{task_id}")
+        kb.button(text="🗑 Удалить", callback_data=f"delete:{task_id}")
+        kb.adjust(1, 2)
+    
+    return kb
+
+
 @router.message(Command('tasks'))
 @router.message(F.text == "📋 Мои задачи")
 async def cmd_tasks(message: Message, token: str, api_client: APIClient):
     """Показать все задачи"""
     try:
-        tasks = await api_client.get_tasks(token=token, status="-completed")
+        # По умолчанию показываем только активные задачи
+        # (можно передать ?status=-completed,-cancelled)
+        tasks = await api_client.get_tasks(token)
         
-
         if not tasks:
-            await message.answer("📭 У вас пока нет задач.\n\nИспользуйте /create чтобы создать первую задачу.")
+            await message.answer(
+                "📭 У вас пока нет задач.\n\n"
+                "Используйте /create чтобы создать первую задачу."
+            )
             return
         
-        await message.answer(f"📋 <b>Ваши задачи ({len(tasks)}):</b>")
+        # Фильтруем только активные задачи для списка
+        active_tasks = [t for t in tasks if t['status'] in ['pending', 'in_progress']]
+        completed_tasks = [t for t in tasks if t['status'] == 'completed']
         
-        for task in tasks[:10]:  # Показываем первые 10
+        # Показываем статистику
+        await message.answer(
+            f"📋 <b>Ваши задачи:</b>\n\n"
+            f"⏳ Активных: {len(active_tasks)}\n"
+            f"✅ Завершённых: {len(completed_tasks)}\n"
+            f"📊 Всего: {len(tasks)}"
+        )
+        
+        # Показываем активные задачи
+        if active_tasks:
+            await message.answer("⏳ <b>Активные задачи:</b>")
+            for task in active_tasks[:10]:  # Первые 10
+                kb = get_task_keyboard(task)
+                await message.answer(
+                    format_task(task),
+                    reply_markup=kb.as_markup()
+                )
+        
+        # Если есть завершённые - предлагаем посмотреть
+        if completed_tasks:
             kb = InlineKeyboardBuilder()
-            kb.button(text="✅ Выполнить", callback_data=f"complete:{task['id']}")
-            kb.button(text="✏️ Детали", callback_data=f"details:{task['id']}")
-            kb.button(text="🗑 Удалить", callback_data=f"delete:{task['id']}")
-            kb.adjust(2)
-            
+            kb.button(text=f"✅ Показать завершённые ({len(completed_tasks)})", 
+                     callback_data="show_completed")
             await message.answer(
-                format_task(task),
+                "Есть завершённые задачи:",
                 reply_markup=kb.as_markup()
             )
         
-        if len(tasks) > 10:
-            await message.answer(f"... и ещё {len(tasks) - 10} задач")
+        if len(active_tasks) > 10:
+            await message.answer(f"... и ещё {len(active_tasks) - 10} активных задач")
     
     except APIError as e:
         await message.answer(f"❌ Ошибка API: {e.detail}")
     except Exception as e:
         await message.answer(f"❌ Ошибка: {str(e)}")
+
+
+@router.callback_query(F.data == "show_completed")
+async def show_completed_tasks(callback: CallbackQuery, token: str, api_client: APIClient):
+    """Показать завершённые задачи"""
+    try:
+        tasks = await api_client.get_tasks(token)
+        completed_tasks = [t for t in tasks if t['status'] == 'completed']
+        
+        if not completed_tasks:
+            await callback.answer("Нет завершённых задач")
+            return
+        
+        await callback.message.answer("✅ <b>Завершённые задачи:</b>")
+        
+        for task in completed_tasks[:10]:
+            kb = get_task_keyboard(task)
+            await callback.message.answer(
+                format_task(task),
+                reply_markup=kb.as_markup()
+            )
+        
+        await callback.answer()
+    except APIError as e:
+        await callback.answer(f"❌ Ошибка: {e.detail}", show_alert=True)
 
 
 @router.callback_query(F.data.startswith("complete:"))
@@ -89,11 +169,57 @@ async def callback_complete_task(callback: CallbackQuery, token: str, api_client
     task_id = callback.data.split(':')[1]
     
     try:
-        await api_client.complete_task(token, task_id)
+        task = await api_client.complete_task(token, task_id)
+        
+        # Обновляем сообщение с новым статусом
+        kb = get_task_keyboard(task)
         await callback.message.edit_text(
-            callback.message.text + "\n\n✅ <b>Задача выполнена!</b>"
+            format_task(task),
+            reply_markup=kb.as_markup()
         )
         await callback.answer("✅ Задача отмечена как выполненная")
+    
+    except APIError as e:
+        await callback.answer(f"❌ Ошибка: {e.detail}", show_alert=True)
+
+
+@router.callback_query(F.data.startswith("cancel:"))
+async def callback_cancel_task(callback: CallbackQuery, token: str, api_client: APIClient):
+    """Отменить задачу"""
+    task_id = callback.data.split(':')[1]
+    
+    try:
+        task = await api_client.cancel_task(token, task_id)
+        
+        # Обновляем сообщение
+        kb = get_task_keyboard(task)
+        await callback.message.edit_text(
+            format_task(task),
+            reply_markup=kb.as_markup()
+        )
+        await callback.answer("❌ Задача отменена")
+    
+    except APIError as e:
+        await callback.answer(f"❌ Ошибка: {e.detail}", show_alert=True)
+
+
+@router.callback_query(F.data.startswith("reopen:"))
+async def callback_reopen_task(callback: CallbackQuery, token: str, api_client: APIClient):
+    """Вернуть задачу в работу"""
+    task_id = callback.data.split(':')[1]
+    
+    try:
+        # Обновляем статус на pending
+        task = await api_client.update_task(token, task_id, status='pending')
+        
+        # Обновляем сообщение
+        kb = get_task_keyboard(task)
+        await callback.message.edit_text(
+            format_task(task),
+            reply_markup=kb.as_markup()
+        )
+        await callback.answer("🔄 Задача возвращена в работу")
+    
     except APIError as e:
         await callback.answer(f"❌ Ошибка: {e.detail}", show_alert=True)
 
@@ -122,12 +248,8 @@ async def callback_task_details(callback: CallbackQuery, token: str, api_client:
         text = format_task(task)
         text += f"\n\n🆔 ID: <code>{task['id']}</code>"
         
-        kb = InlineKeyboardBuilder()
-        kb.button(text="✅ Выполнить", callback_data=f"complete:{task_id}")
-        kb.button(text="❌ Отменить", callback_data=f"cancel:{task_id}")
-        kb.button(text="🗑 Удалить", callback_data=f"delete:{task_id}")
-        kb.button(text="◀️ Назад", callback_data=f"back")
-        kb.adjust(2)
+        kb = get_task_keyboard(task)
+        kb.button(text="◀️ Назад", callback_data="back")
         
         await callback.message.edit_text(
             text,
@@ -158,11 +280,7 @@ async def cmd_overdue(message: Message, token: str, api_client: APIClient):
         await message.answer(f"⚠️ <b>Просроченные задачи ({len(tasks)}):</b>")
         
         for task in tasks:
-            kb = InlineKeyboardBuilder()
-            kb.button(text="✅ Выполнить", callback_data=f"complete:{task['id']}")
-            kb.button(text="🗑 Удалить", callback_data=f"delete:{task['id']}")
-            kb.adjust(2)
-            
+            kb = get_task_keyboard(task)
             await message.answer(
                 format_task(task),
                 reply_markup=kb.as_markup()
