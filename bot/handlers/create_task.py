@@ -5,7 +5,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from bot.services.api_client import APIClient, APIError
+from services.api_client import APIClient, APIError
 from datetime import datetime, timedelta
 
 router = Router()

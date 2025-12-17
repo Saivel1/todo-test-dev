@@ -2,8 +2,8 @@ from typing import Callable, Dict, Any, Awaitable
 from aiogram import BaseMiddleware
 from aiogram.types import Message, CallbackQuery
 
-from bot.services.token_storage import token_storage
-from bot.services.api_client import APIClient
+from services.token_storage import token_storage
+from services.api_client import APIClient
 
 
 class AuthMiddleware(BaseMiddleware):

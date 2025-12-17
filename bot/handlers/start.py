@@ -3,7 +3,7 @@ from aiogram.filters import Command
 from aiogram.types import Message
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
-from bot.services.api_client import APIClient
+from services.api_client import APIClient
 
 router = Router()
 
