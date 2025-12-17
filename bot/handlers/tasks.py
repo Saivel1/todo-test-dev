@@ -55,6 +55,7 @@ async def cmd_tasks(message: Message, token: str, api_client: APIClient):
     try:
         tasks = await api_client.get_tasks(token=token, status="in_progress")
         
+
         if not tasks:
             await message.answer("📭 У вас пока нет задач.\n\nИспользуйте /create чтобы создать первую задачу.")
             return

@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Count, Q
 from django.utils import timezone
+from logger_setup import logger
 
 from .models import Task, Category
 from .serializers import (
@@ -43,9 +44,14 @@ class TaskViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """Возвращаем только задачи текущего пользователя"""
-        return Task.objects.filter(
+        res = Task.objects.filter(
             user=self.request.user
         ).select_related('user').prefetch_related('categories')
+
+        logger.debug("Вошли в get_queryset")
+        logger.debug(res)
+
+        return res
     
     def get_serializer_class(self):
         """Выбор сериализатора в зависимости от действия"""
@@ -85,7 +91,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         Альтернативный эндпоинт для получения задач пользователя
         """
         queryset = self.filter_queryset(self.get_queryset())
-        
+        logger.debug("Вошли в /api/tasks/my/")
         # Фильтрация по статусу
         status_filter = request.query_params.get('status')
         if status_filter:
