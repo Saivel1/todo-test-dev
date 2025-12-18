@@ -82,8 +82,12 @@ clean: ## Очистить всё (контейнеры, volumes, образы)
 ps: ## Показать статус контейнеров
 	  docker compose ps
 
-init: build up migrate ## Полная инициализация проекта
+init: build up ## Полная инициализация проекта
 	@echo "⏳ Waiting for services to be ready..."
 	sleep 10
-	  docker compose exec backend python manage.py shell < scripts/init-db.sh || true
+	@echo "🔄 Running migrations..."
+	$(MAKE) migrate
+	@echo "📊 Initializing database with test data..."
+	sleep 3
+	docker-compose exec backend python manage.py shell < scripts/init-db.sh || true
 	@echo "🎉 Проект готов к работе!"
