@@ -30,6 +30,7 @@ SECRET_KEY = 'django-insecure-nz!7va#5)exqx!m=wse%+(0reb8iyj)@n)qe96zis!by4i^-mz
 DEBUG = True
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "backend"]
+print(load_dotenv())
 
 AUTH_USER_MODEL = 'users.User'
 
@@ -143,6 +144,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# ?
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -161,6 +163,7 @@ REST_FRAMEWORK = {
     'DATETIME_INPUT_FORMATS': ['%Y-%m-%d %H:%M:%S', 'iso-8601'],
 }
 
+# ?
 
 CORS_ALLOWED_ORIGINS = os.getenv(
     'CORS_ALLOWED_ORIGINS',

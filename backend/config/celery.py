@@ -25,6 +25,7 @@ app.conf.beat_schedule = {
     },
 }
 
+# Брать из settings?
 app.conf.update(
     task_serializer='json',
     accept_content=['json'],
