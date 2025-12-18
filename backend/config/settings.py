@@ -14,13 +14,14 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-ENV_DIR = BASE_DIR.parent
 
-print(ENV_DIR)
+load_dotenv()
+
+
 
 
 # Quick-start development settings - unsuitable for production
@@ -32,7 +33,8 @@ SECRET_KEY = 'django-insecure-nz!7va#5)exqx!m=wse%+(0reb8iyj)@n)qe96zis!by4i^-mz
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "backend"]
+ALLOWED_HOSTS = [os.getenv("ALLOWED_HOSTS", "").split(",")]
+
 
 AUTH_USER_MODEL = 'users.User'
 
